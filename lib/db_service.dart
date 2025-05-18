@@ -95,4 +95,24 @@ class DBService {
     final db = await database;
     return await db.query('journals', where: 'date = ?', whereArgs: [date]);
   }
+
+  // Moodları getir (tarih aralığı)
+  static Future<List<Map<String, dynamic>>> getMoodsByDateRange(String startDate, String endDate) async {
+    final db = await database;
+    return await db.query(
+      'moods',
+      where: 'date >= ? AND date <= ?',
+      whereArgs: [startDate, endDate],
+    );
+  }
+
+  // Mikro günlükleri getir (tarih aralığı)
+  static Future<List<Map<String, dynamic>>> getJournalsByDateRange(String startDate, String endDate) async {
+    final db = await database;
+    return await db.query(
+      'journals',
+      where: 'date >= ? AND date <= ?',
+      whereArgs: [startDate, endDate],
+    );
+  }
 }
