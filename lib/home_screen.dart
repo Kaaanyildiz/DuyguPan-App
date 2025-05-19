@@ -10,6 +10,7 @@ import 'weekly_report.dart';
 import 'settings.dart';
 import 'mood_widget.dart';
 import 'badge_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DuyguPanHome extends StatefulWidget {
   const DuyguPanHome({super.key});
@@ -61,18 +62,24 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
       }
     }
     await updateMoodWidget(m, note, avgMood: avgMood, motivation: motivation);
-    // Rozet: İlk mood kaydı
     final badgeService = Provider.of<BadgeService>(context, listen: false);
-    if (!badgeService.hasBadge('first_mood')) {
-      await badgeService.earnBadge('first_mood', context: context);
-    }
+    // Rozet: İlk mood kaydı
+    await badgeService.earnBadge('first_mood', context: context);
     // Rozet: 3 gün üst üste mood
     final moodsRange = await DBService.getMoodsByDateRange(
       DateTime.now().subtract(const Duration(days: 2)).toIso8601String().substring(0, 10),
       today,
     );
-    if (moodsRange.length >= 3 && !badgeService.hasBadge('streak_3')) {
+    if (moodsRange.length >= 3) {
       await badgeService.earnBadge('streak_3', context: context);
+    }
+    // Rozet: 30 gün mood kaydı (mood_master)
+    final moods30 = await DBService.getMoodsByDateRange(
+      DateTime.now().subtract(const Duration(days: 29)).toIso8601String().substring(0, 10),
+      today,
+    );
+    if (moods30.length >= 30) {
+      await badgeService.earnBadge('mood_master', context: context);
     }
   }
 
@@ -81,11 +88,25 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
     setState(() {
       habits[habit] = value;
     });
-    // Rozet: 5 alışkanlık tamamlandı
     final badgeService = Provider.of<BadgeService>(context, listen: false);
     final completed = habits.values.where((v) => v).length;
-    if (completed >= 5 && !badgeService.hasBadge('habit_5')) {
+    if (completed >= 5) {
       await badgeService.earnBadge('habit_5', context: context);
+    }
+    // 14 gün üst üste alışkanlık (habit_streak_14)
+    final now = DateTime.now();
+    int streak = 0;
+    for (int i = 0; i < 14; i++) {
+      final date = now.subtract(Duration(days: i)).toIso8601String().substring(0, 10);
+      final dayHabits = await DBService.getHabitsByDate(date);
+      if (dayHabits.isNotEmpty && (dayHabits.every((h) => h['isDone'] == true))) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    if (streak >= 14) {
+      await badgeService.earnBadge('habit_streak_14', context: context);
     }
   }
 
@@ -94,13 +115,12 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
     setState(() {
       microNote = note;
     });
-    // Rozet: 7 gün mikro günlük
     final badgeService = Provider.of<BadgeService>(context, listen: false);
     final journals = await DBService.getJournalsByDateRange(
       DateTime.now().subtract(const Duration(days: 6)).toIso8601String().substring(0, 10),
       today,
     );
-    if (journals.length >= 7 && !badgeService.hasBadge('journal_7')) {
+    if (journals.length >= 7) {
       await badgeService.earnBadge('journal_7', context: context);
     }
   }
@@ -183,9 +203,11 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('DuyguPan'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: Icon(themeProvider.isDark ? Icons.light_mode : Icons.dark_mode),
@@ -203,180 +225,142 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            MoodEntry(onMoodSelected: _onMoodSelected),
-            HabitTracker(
-              habits: habits.keys.toList(),
-              dailyStatus: habits,
-              onHabitToggle: _onHabitToggle,
-            ),
-            MicroJournal(onSave: _onMicroNoteSave),
-            if (mood != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  color: Theme.of(context).colorScheme.surface,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.10),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.08),
+              Theme.of(context).colorScheme.surface.withOpacity(0.92),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: MoodEntry(onMoodSelected: _onMoodSelected, key: ValueKey(mood)),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: HabitTracker(
+                      habits: habits.keys.toList(),
+                      dailyStatus: habits,
+                      onHabitToggle: _onHabitToggle,
+                      key: ValueKey(habits.toString()),
+                    ),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: MicroJournal(onSave: _onMicroNoteSave, key: ValueKey(microNote)),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      color: Theme.of(context).colorScheme.surface,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.emoji_emotions, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text('Bugünkü mod: $mood', style: Theme.of(context).textTheme.titleMedium),
+                            Row(
+                              children: [
+                                Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.primary, size: 22),
+                                const SizedBox(width: 8),
+                                Text('Motivasyon & Rozetler', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            BadgeWidget(), // Modern rozet widget'ı
                           ],
                         ),
-                        if (moodNote != null && moodNote!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text('Açıklama: $moodNote', style: Theme.of(context).textTheme.bodyMedium),
-                          ),
-                        const SizedBox(height: 12),
-                        Center(child: MoodWidgetPreview(mood: mood!, note: moodNote)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            if (microNote != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Card(
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  color: Colors.orange.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.sticky_note_2_outlined, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text('Kendime Not: $microNote', style: Theme.of(context).textTheme.bodyMedium),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Consumer<BadgeService>(
-                builder: (context, badgeService, _) {
-                  final badges = badgeService.earnedBadges;
-                  if (badges.isEmpty) {
-                    return const SizedBox();
-                  }
-                  return Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    color: Colors.yellow.shade50,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.military_tech, color: Colors.amber.shade700),
-                              const SizedBox(width: 8),
-                              Text('Rozetlerim', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: badges.map((badge) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 6),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => Dialog(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(24),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              TweenAnimationBuilder<double>(
-                                                tween: Tween(begin: 0.7, end: 1),
-                                                duration: const Duration(milliseconds: 600),
-                                                curve: Curves.elasticOut,
-                                                builder: (context, scale, child) => Transform.scale(
-                                                  scale: scale,
-                                                  child: CircleAvatar(
-                                                    backgroundColor: badge.color.withOpacity(0.2),
-                                                    child: Icon(badge.icon, color: badge.color, size: 48),
-                                                    radius: 40,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 16),
-                                              Text(badge.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                                              const SizedBox(height: 8),
-                                              Text(badge.description, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
-                                              const SizedBox(height: 16),
-                                              ElevatedButton(
-                                                onPressed: () => Navigator.of(ctx).pop(),
-                                                child: const Text('Kapat'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: badge.color,
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Column(
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundColor: badge.color.withOpacity(0.2),
-                                        child: Icon(badge.icon, color: badge.color, size: 28),
-                                        radius: 24,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(badge.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                                    ],
-                                  ),
-                                ),
-                              )).toList(),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-                  );
-                },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.bar_chart, color: Theme.of(context).colorScheme.onPrimary),
+                        label: Text(
+                          'Haftalık Raporu Gör',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 4,
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const WeeklyReport()),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.bar_chart),
-                label: const Text('Haftalık Raporu Gör'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const WeeklyReport()),
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class BadgeWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<BadgeService>(
+      builder: (context, badgeService, _) {
+        final badges = badgeService.earnedBadges;
+        if (badges.isEmpty) {
+          return Text('Henüz rozet kazanmadın.', style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14));
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: badges.map((badge) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: GestureDetector(
+                onTap: () => badgeService.showBadgeDetailDialog(context, badge),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: badge.color.withOpacity(0.2),
+                      child: Icon(badge.icon, color: badge.color, size: 28),
+                      radius: 24,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(badge.title, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+                  ],
+                ),
+              ),
+            )).toList(),
+          ),
+        );
+      },
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:pdf/pdf.dart';
 import 'db_service.dart';
 import 'package:provider/provider.dart';
 import 'badge_service.dart';
+import 'package:lottie/lottie.dart';
 
 class WeeklyReport extends StatefulWidget {
   const WeeklyReport({super.key});
@@ -255,13 +256,22 @@ class _WeeklyReportState extends State<WeeklyReport> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Haftalık Rapor'),
-        backgroundColor: Colors.deepPurple.shade100,
+        title: Text(
+          'Haftalık Rapor',
+          style: GoogleFonts.poppins(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
         actions: [
           IconButton(
             icon: const Icon(Icons.image),
             tooltip: 'Görsel Olarak Paylaş',
             onPressed: _shareAsImage,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ],
       ),
@@ -270,191 +280,378 @@ class _WeeklyReportState extends State<WeeklyReport> {
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: RepaintBoundary(
-                  key: _reportKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // AI destekli motivasyon kartı
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        color: Colors.deepPurple.shade50,
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Row(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeInOutCubic,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.07),
+                        Theme.of(context).colorScheme.secondary.withOpacity(0.08),
+                        Theme.of(context).colorScheme.surface.withOpacity(0.92),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.13),
+                        blurRadius: 24,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.10),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: RepaintBoundary(
+                    key: _reportKey,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Icon(Icons.auto_awesome, color: Colors.deepPurple, size: 36),
-                              const SizedBox(width: 16),
+                              Icon(Icons.bar_chart_rounded, color: Theme.of(context).colorScheme.primary, size: 28),
+                              const SizedBox(width: 8),
                               Expanded(
-                                child: Text(_generateMotivation(),
-                                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepPurple.shade800),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Card(
-                        color: Colors.deepPurple.shade50,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.auto_awesome, color: Colors.deepPurple),
-                              const SizedBox(width: 12),
-                              Expanded(child: Text(_generateWeeklyInsight(), style: GoogleFonts.poppins(fontSize: 16))),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Ruh Hali Trend Grafiği', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 220,
-                        child: moods.isEmpty
-                            ? const Center(child: Text('Veri yok'))
-                            : LineChart(
-                                LineChartData(
-                                  minY: 0,
-                                  maxY: 4,
-                                  gridData: FlGridData(show: true),
-                                  borderData: FlBorderData(show: true),
-                                  titlesData: FlTitlesData(
-                                    leftTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: true, reservedSize: 32, getTitlesWidget: (v, meta) {
-                                        const moodLabels = ['Kötü', 'Düşük', 'Nötr', 'İyi', 'Harika'];
-                                        return Text(moodLabels[v.toInt()].toString(), style: GoogleFonts.poppins(fontSize: 10));
-                                      }),
-                                    ),
-                                    bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, meta) {
-                                        if (v.toInt() < moods.length) {
-                                          final date = moods[v.toInt()]['date'];
-                                          return Text(date.substring(5), style: GoogleFonts.poppins(fontSize: 10));
-                                        }
-                                        return const SizedBox.shrink();
-                                      }),
-                                    ),
+                                child: Text(
+                                  'Haftalık Duygu & Alışkanlık Raporu',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
-                                  lineBarsData: [
-                                    LineChartBarData(
-                                      spots: [
-                                        for (int i = 0; i < moods.length; i++)
-                                          FlSpot(i.toDouble(), (moods[i]['mood'] ?? 2).toDouble()),
-                                      ],
-                                      isCurved: true,
-                                      color: Colors.deepPurple,
-                                      barWidth: 4,
-                                      dotData: FlDotData(show: true),
-                                      belowBarData: BarAreaData(show: true, color: Colors.deepPurple.withOpacity(0.2)),
-                                    ),
-                                  ],
+                                  overflow: TextOverflow.visible,
+                                  maxLines: 2,
                                 ),
                               ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text('Alışkanlık Sürekliliği', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      ...habits.map((h) {
-                        final date = h['date'];
-                        final habitList = h['habits'] as List<dynamic>;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(date, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                            ...habitList.map((item) => Row(
-                              children: [
-                                Checkbox(value: (item['isDone'] ?? 0) == 1, onChanged: null),
-                                Text(item['name'] ?? '', style: GoogleFonts.poppins()),
-                              ],
-                            )),
-                            const SizedBox(height: 8),
-                          ],
-                        );
-                      }),
-                      const SizedBox(height: 24),
-                      const Text('Haftalık Mikro Günlükler', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      if (journals.isEmpty)
-                        const Text('Bu hafta için mikro günlük bulunamadı.')
-                      else
-                        ...journals.map((j) => Card(
-                              color: Colors.orange.shade50,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              child: ListTile(
-                                leading: const Icon(Icons.sticky_note_2_outlined, color: Colors.orange),
-                                title: Text(j['note'] ?? '', style: GoogleFonts.poppins()),
-                                subtitle: Text(j['date'], style: GoogleFonts.poppins(fontSize: 12)),
-                              ),
-                            )),
-                      const SizedBox(height: 24),
-                      Card(
-                        color: Colors.green.shade50,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.emoji_events, color: Colors.green),
-                              const SizedBox(width: 12),
-                              Expanded(child: Text(_habitSuccessText(), style: GoogleFonts.poppins(fontSize: 16))),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Consumer<BadgeService>(
-                        builder: (context, badgeService, _) {
-                          final badges = badgeService.earnedBadges;
-                          if (badges.isEmpty) return const SizedBox();
-                          return Card(
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                            color: Colors.yellow.shade50,
+                          const SizedBox(height: 18),
+                          // AI destekli motivasyon kartı
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            color: Theme.of(context).colorScheme.surfaceVariant,
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              padding: const EdgeInsets.all(20),
+                              child: Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.military_tech, color: Colors.amber.shade700),
-                                      const SizedBox(width: 8),
-                                      Text('Bu Haftaki Rozetlerim', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                    ],
+                                  Lottie.asset(
+                                    'assets/lottie/motivation.json',
+                                    width: 56,
+                                    height: 56,
+                                    repeat: true,
+                                    fit: BoxFit.contain,
                                   ),
-                                  const SizedBox(height: 8),
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      children: badges.map((badge) => Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                                        child: Column(
-                                          children: [
-                                            CircleAvatar(
-                                              backgroundColor: badge.color.withOpacity(0.2),
-                                              child: Icon(badge.icon, color: badge.color, size: 28),
-                                              radius: 24,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(badge.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                                          ],
-                                        ),
-                                      )).toList(),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      _generateMotivation(),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        },
+                          ),
+                          const SizedBox(height: 18),
+                          Card(
+                            color: Theme.of(context).colorScheme.secondaryContainer,
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _generateWeeklyInsight(),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Ruh Hali Trend Grafiği',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 220,
+                            child: moods.isEmpty
+                                ? const Center(child: Text('Veri yok'))
+                                : Builder(
+                                    builder: (context) {
+                                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                                      final gridColor = isDark
+                                          ? Colors.white.withOpacity(0.18)
+                                          : Colors.deepPurple.shade100;
+                                      final barGradient = LinearGradient(
+                                        colors: isDark
+                                            ? [
+                                                Theme.of(context).colorScheme.primary.withOpacity(0.28),
+                                                Theme.of(context).colorScheme.secondary.withOpacity(0.18),
+                                              ]
+                                            : [
+                                                Theme.of(context).colorScheme.primary.withOpacity(0.18),
+                                                Theme.of(context).colorScheme.secondary.withOpacity(0.10),
+                                              ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      );
+                                      final lineGradient = LinearGradient(
+                                        colors: isDark
+                                            ? [
+                                                Theme.of(context).colorScheme.primary,
+                                                Theme.of(context).colorScheme.secondary,
+                                                Theme.of(context).colorScheme.tertiary,
+                                              ]
+                                            : [
+                                                Theme.of(context).colorScheme.primary,
+                                                Theme.of(context).colorScheme.secondary,
+                                                Theme.of(context).colorScheme.tertiary,
+                                              ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      );
+                                      return LineChart(
+                                        LineChartData(
+                                          minY: 0,
+                                          maxY: 4,
+                                          gridData: FlGridData(
+                                            show: true,
+                                            drawVerticalLine: false,
+                                            getDrawingHorizontalLine: (value) {
+                                              return FlLine(
+                                                color: gridColor,
+                                                strokeWidth: 1.2,
+                                              );
+                                            },
+                                          ),
+                                          borderData: FlBorderData(show: false),
+                                          titlesData: FlTitlesData(
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                reservedSize: 32,
+                                                getTitlesWidget: (v, meta) {
+                                                  const moodLabels = ['Kötü', 'Düşük', 'Nötr', 'İyi', 'Harika'];
+                                                  return Text(
+                                                    moodLabels[v.toInt()].toString(),
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 10,
+                                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                getTitlesWidget: (v, meta) {
+                                                  if (v.toInt() < moods.length) {
+                                                    final date = moods[v.toInt()]['date'];
+                                                    return Text(
+                                                      date.substring(5),
+                                                      style: GoogleFonts.poppins(
+                                                        fontSize: 10,
+                                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                      ),
+                                                    );
+                                                  }
+                                                  return const SizedBox.shrink();
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                          lineBarsData: [
+                                            LineChartBarData(
+                                              spots: [
+                                                for (int i = 0; i < moods.length; i++)
+                                                  FlSpot(i.toDouble(), (moods[i]['mood'] ?? 2).toDouble()),
+                                              ],
+                                              isCurved: true,
+                                              gradient: lineGradient,
+                                              barWidth: 5,
+                                              dotData: FlDotData(
+                                                show: true,
+                                                getDotPainter: (spot, percent, bar, index) {
+                                                  return FlDotCirclePainter(
+                                                    radius: 6,
+                                                    color: isDark ? Colors.black : Colors.white,
+                                                    strokeWidth: 3,
+                                                    strokeColor: Theme.of(context).colorScheme.primary,
+                                                  );
+                                                },
+                                              ),
+                                              belowBarData: BarAreaData(
+                                                show: true,
+                                                gradient: barGradient,
+                                              ),
+                                            ),
+                                          ],
+                                          lineTouchData: LineTouchData(
+                                            touchTooltipData: LineTouchTooltipData(
+                                              tooltipBgColor: Theme.of(context).colorScheme.surfaceVariant,
+                                              getTooltipItems: (touchedSpots) {
+                                                return touchedSpots.map((spot) {
+                                                  final date = moods[spot.x.toInt()]['date'];
+                                                  final mood = moods[spot.x.toInt()]['mood'];
+                                                  return LineTooltipItem(
+                                                    'Tarih: 	${date.substring(5)}\nMood: $mood',
+                                                    GoogleFonts.poppins(
+                                                      fontSize: 13,
+                                                      color: Theme.of(context).colorScheme.primary,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  );
+                                                }).toList();
+                                              },
+                                            ),
+                                            handleBuiltInTouches: true,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text('Alışkanlık Sürekliliği', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 12),
+                          ...habits.map((h) {
+                            final date = h['date'];
+                            final habitList = h['habits'] as List<dynamic>;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(date, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                                ...habitList.map((item) => Row(
+                                  children: [
+                                    Checkbox(value: (item['isDone'] ?? 0) == 1, onChanged: null),
+                                    Text(item['name'] ?? '', style: GoogleFonts.poppins()),
+                                  ],
+                                )),
+                                const SizedBox(height: 8),
+                              ],
+                            );
+                          }),
+                          const SizedBox(height: 24),
+                          const Text('Haftalık Mikro Günlükler', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 12),
+                          if (journals.isEmpty)
+                            const Text('Bu hafta için mikro günlük bulunamadı.')
+                          else
+                            ...journals.map((j) => Card(
+                                  color: Theme.of(context).colorScheme.secondaryContainer,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  child: ListTile(
+                                    leading: const Icon(Icons.sticky_note_2_outlined, color: Colors.orange),
+                                    title: Text(j['note'] ?? '', style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface)),
+                                    subtitle: Text(j['date'], style: GoogleFonts.poppins(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+                                  ),
+                                )),
+                          const SizedBox(height: 24),
+                          Card(
+                            color: Theme.of(context).colorScheme.secondaryContainer,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.emoji_events, color: Colors.green),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Text(_habitSuccessText(), style: GoogleFonts.poppins(fontSize: 16, color: Theme.of(context).colorScheme.onSurface))),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Consumer<BadgeService>(
+                            builder: (context, badgeService, _) {
+                              final badges = badgeService.earnedBadges;
+                              if (badges.isEmpty) return const SizedBox();
+                              return Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                color: Theme.of(context).colorScheme.secondaryContainer,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.military_tech, color: Theme.of(context).colorScheme.primary),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Bu Haftaki Rozetlerim',
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          children: badges.map((badge) => Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                                            child: Column(
+                                              children: [
+                                                CircleAvatar(
+                                                  backgroundColor: badge.color.withOpacity(0.2),
+                                                  child: Icon(badge.icon, color: badge.color, size: 28),
+                                                  radius: 24,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  badge.title,
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )).toList(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
