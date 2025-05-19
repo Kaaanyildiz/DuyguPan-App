@@ -14,6 +14,7 @@ import 'db_service.dart';
 import 'package:provider/provider.dart';
 import 'badge_service.dart';
 import 'package:lottie/lottie.dart';
+import 'widget_data.dart';
 
 class WeeklyReport extends StatefulWidget {
   const WeeklyReport({super.key});
@@ -103,7 +104,8 @@ class _WeeklyReportState extends State<WeeklyReport> {
     return 'Haftalık alışkanlık başarı oranı: %$percent\n$badge';
   }
 
-  String _generateMotivation() {
+  /// AI destekli motivasyon ve öneri fonksiyonu
+  String _generateAIMotivation() {
     if (moods.isEmpty) return 'Yeni bir haftaya başlarken küçük adımlar bile büyük fark yaratır!';
     double avgMood = moods.map((m) => m['mood'] as int).reduce((a, b) => a + b) / moods.length;
     int totalHabits = 0, doneHabits = 0;
@@ -116,13 +118,13 @@ class _WeeklyReportState extends State<WeeklyReport> {
     }
     double habitRate = totalHabits > 0 ? doneHabits / totalHabits : 0;
     if (avgMood >= 3.5 && habitRate >= 0.7) {
-      return 'Harika bir hafta geçirdin! Bu istikrarı sürdür, kendinle gurur duy.';
+      return 'Harika bir hafta geçirdin! Bu istikrarı sürdür, kendinle gurur duy. Yeni bir alışkanlık eklemeyi düşünebilirsin.';
     } else if (avgMood >= 2.5 && habitRate >= 0.4) {
-      return 'Dengeli bir haftaydı. Küçük iyileştirmelerle daha da iyi hissedebilirsin!';
+      return 'Dengeli bir haftaydı. Küçük iyileştirmelerle daha da iyi hissedebilirsin! Belki bir alışkanlığı güçlendirmeye odaklanabilirsin.';
     } else if (avgMood < 2.5 && habitRate < 0.4) {
-      return 'Zor bir hafta olabilir. Kendine nazik ol, minik hedeflerle başla!';
+      return 'Zor bir hafta olabilir. Kendine nazik ol, minik hedeflerle başla! Bir sonraki hafta için tek bir alışkanlığa odaklanmayı deneyebilirsin.';
     } else {
-      return 'Her gün yeni bir başlangıç. Motive ol ve küçük adımlar atmaya devam et!';
+      return 'Her gün yeni bir başlangıç. Motive ol ve küçük adımlar atmaya devam et! Unutma, ilerleme istikrarla gelir.';
     }
   }
 
@@ -273,6 +275,25 @@ class _WeeklyReportState extends State<WeeklyReport> {
             onPressed: _shareAsImage,
             color: Theme.of(context).colorScheme.primary,
           ),
+          IconButton(
+            icon: const Icon(Icons.widgets_outlined),
+            tooltip: 'Ana Ekran Widget’ına Gönder',
+            onPressed: () async {
+              final moodSummary = _generateAIMotivation();
+              final badgeService = Provider.of<BadgeService>(context, listen: false);
+              final badgeTitles = badgeService.earnedBadges.map((b) => b.title).toList();
+              await WidgetDataService.updateWeeklyReportWidget(
+                moodSummary: moodSummary,
+                badges: badgeTitles,
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Haftalık AI önerisi ana ekran widget’ına gönderildi!')),
+                );
+              }
+            },
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ],
       ),
       body: loading
@@ -352,7 +373,7 @@ class _WeeklyReportState extends State<WeeklyReport> {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Text(
-                                      _generateMotivation(),
+                                      _generateAIMotivation(),
                                       style: GoogleFonts.poppins(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,

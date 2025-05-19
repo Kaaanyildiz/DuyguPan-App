@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lottie/lottie.dart';
+import 'widget_data.dart';
 
 class Badge {
   final String id;
@@ -103,6 +104,14 @@ class BadgeService with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList('earnedBadges', _earnedBadgeIds);
       notifyListeners();
+      // Widget rozet güncellemesi
+      if (context != null) {
+        final badges = earnedBadges.map((b) => b.title).toList();
+        await WidgetDataService.updateWeeklyReportWidget(
+          moodSummary: 'Yeni rozet kazandınız!',
+          badges: badges,
+        );
+      }
       if (context != null) {
         final badge = allBadges.firstWhere((b) => b.id == badgeId);
         showDialog(

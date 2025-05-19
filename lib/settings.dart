@@ -10,6 +10,8 @@ import 'theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 import 'package:lottie/lottie.dart';
+import 'widget_data.dart';
+import 'badge_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,6 +38,21 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _updateWidgetFromSettings(BuildContext context) async {
+    final badgeService = Provider.of<BadgeService>(context, listen: false);
+    final badges = badgeService.earnedBadges.map((b) => b.title).toList();
+    String summary = 'Ayarlar ekranından widget güncellendi.';
+    await WidgetDataService.updateWeeklyReportWidget(
+      moodSummary: summary,
+      badges: badges,
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Widget ayarlar ekranından güncellendi!')),
+      );
+    }
   }
 
   @override
@@ -553,6 +570,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _updateWidgetFromSettings(context),
+        icon: const Icon(Icons.widgets_outlined),
+        label: const Text('Widget’ı Güncelle'),
       ),
     );
   }

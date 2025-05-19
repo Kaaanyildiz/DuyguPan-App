@@ -1,12 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import 'badge_service.dart';
+import 'widget_data.dart';
 
 class HabitTracker extends StatelessWidget {
   final List<String> habits;
   final Map<String, bool> dailyStatus;
   final void Function(String habit, bool value) onHabitToggle;
   const HabitTracker({super.key, required this.habits, required this.dailyStatus, required this.onHabitToggle});
+
+  void _updateWidgetFromHabits(BuildContext context) async {
+    final completed = dailyStatus.values.where((v) => v).length;
+    final badgeService = Provider.of<BadgeService>(context, listen: false);
+    final badges = badgeService.earnedBadges.map((b) => b.title).toList();
+    String summary = 'Bugün $completed alışkanlık tamamlandı.';
+    await WidgetDataService.updateWeeklyReportWidget(
+      moodSummary: summary,
+      badges: badges,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Widget alışkanlık durumu ile güncellendi!')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +126,14 @@ class HabitTracker extends StatelessWidget {
                   ),
                 ),
               )),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _updateWidgetFromHabits(context),
+                  icon: const Icon(Icons.widgets_outlined),
+                  label: const Text('Widget’a Gönder'),
+                ),
+              ),
             ],
           ),
         ),

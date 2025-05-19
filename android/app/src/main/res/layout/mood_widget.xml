@@ -4,13 +4,15 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="@android:color/white">
+    android:background="@android:color/transparent">
 
     <ImageView
         android:id="@+id/mood_icon"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:src="@mipmap/ic_launcher" />
+        android:src="@mipmap/ic_launcher"
+        android:tint="@android:color/holo_blue_dark"
+        android:contentDescription="Mood Icon" />
 
     <TextView
         android:id="@+id/mood_note"
@@ -18,7 +20,8 @@
         android:layout_height="wrap_content"
         android:text="Modunuz"
         android:textSize="16sp"
-        android:textColor="#333333"
+        android:textColor="#222222"
+        android:fontFamily="sans-serif-medium"
         android:layout_marginTop="8dp" />
 
     <TextView
@@ -28,6 +31,7 @@
         android:text="Ortalama Mood: -"
         android:textSize="14sp"
         android:textColor="#666666"
+        android:fontFamily="sans-serif"
         android:layout_marginTop="4dp"
         android:visibility="gone" />
 
@@ -38,6 +42,18 @@
         android:text="Motivasyon mesajı"
         android:textSize="13sp"
         android:textColor="#00897B"
+        android:fontFamily="sans-serif"
         android:layout_marginTop="4dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/badges"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rozetler: -"
+        android:textSize="13sp"
+        android:textColor="#FF9800"
+        android:fontFamily="sans-serif"
+        android:layout_marginTop="6dp"
         android:visibility="gone" />
 </LinearLayout>

@@ -11,6 +11,7 @@ import 'settings.dart';
 import 'mood_widget.dart';
 import 'badge_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'widget_data.dart';
 
 class DuyguPanHome extends StatefulWidget {
   const DuyguPanHome({super.key});
@@ -122,6 +123,29 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
     );
     if (journals.length >= 7) {
       await badgeService.earnBadge('journal_7', context: context);
+    }
+  }
+
+  void _updateWidgetFromHome() async {
+    final badgeService = Provider.of<BadgeService>(context, listen: false);
+    final badges = badgeService.earnedBadges.map((b) => b.title).toList();
+    String moodSummary = '';
+    if (mood != null) {
+      moodSummary = 'Bugünkü modun: $mood';
+      if (moodNote != null && moodNote!.isNotEmpty) {
+        moodSummary += '\nNot: $moodNote';
+      }
+    } else {
+      moodSummary = 'Bugün için mood kaydı yok.';
+    }
+    await WidgetDataService.updateWeeklyReportWidget(
+      moodSummary: moodSummary,
+      badges: badges,
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ana ekran widget’ı güncellendi!')),
+      );
     }
   }
 
@@ -324,6 +348,11 @@ class _DuyguPanHomeState extends State<DuyguPanHome> {
             ),
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _updateWidgetFromHome,
+        icon: const Icon(Icons.widgets_outlined),
+        label: const Text('Widget’ı Güncelle'),
       ),
     );
   }

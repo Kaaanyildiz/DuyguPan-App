@@ -17,6 +17,7 @@ class MoodWidgetProvider : AppWidgetProvider() {
         val note = prefs.getString("mood_note", "")
         val avgMood = prefs.getFloat("avg_mood", -1f)
         val motivation = prefs.getString("motivation", "")
+        val badges = prefs.getString("badges", "")
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.mood_widget)
             // Mood ve not gösterimi
@@ -42,6 +43,13 @@ class MoodWidgetProvider : AppWidgetProvider() {
                 views.setTextViewText(R.id.motivation, motivation)
             } else {
                 views.setViewVisibility(R.id.motivation, android.view.View.GONE)
+            }
+            // Rozetler gösterimi
+            if (!badges.isNullOrEmpty()) {
+                views.setViewVisibility(R.id.badges, android.view.View.VISIBLE)
+                views.setTextViewText(R.id.badges, "Rozetler: $badges")
+            } else {
+                views.setViewVisibility(R.id.badges, android.view.View.GONE)
             }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

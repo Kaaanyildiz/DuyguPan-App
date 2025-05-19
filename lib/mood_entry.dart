@@ -7,6 +7,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:lottie/lottie.dart';
 import 'badge_service.dart';
 import 'theme_provider.dart';
+import 'widget_data.dart';
 
 class MoodEntry extends StatefulWidget {
   final void Function(int mood, String? note) onMoodSelected;
@@ -80,6 +81,21 @@ class _MoodEntryState extends State<MoodEntry> {
       await HomeWidget.updateWidget(name: 'MoodWidgetProvider', iOSName: 'MoodWidget');
     } catch (e) {
       // Hata durumunda sessizce geç
+    }
+  }
+
+  void _updateWidgetFromMood(BuildContext context) async {
+    final badgeService = Provider.of<BadgeService>(context, listen: false);
+    final badges = badgeService.earnedBadges.map((b) => b.title).toList();
+    String summary = selectedMood != null ? 'Bugünkü modun: $selectedMood\nNot: ${noteController.text}' : 'Bugün için mood kaydı yok.';
+    await WidgetDataService.updateWeeklyReportWidget(
+      moodSummary: summary,
+      badges: badges,
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mood ana ekran widget’ına gönderildi!')),
+      );
     }
   }
 
@@ -300,6 +316,14 @@ class _MoodEntryState extends State<MoodEntry> {
                           Text('Kaydet', style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _updateWidgetFromMood(context),
+                      icon: const Icon(Icons.widgets_outlined),
+                      label: const Text('Widget’a Gönder'),
                     ),
                   ),
                 ],
